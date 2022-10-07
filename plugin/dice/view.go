@@ -24,7 +24,7 @@ func (DicePlugin) GetPluginInfo() gonebot.PluginInfo {
 	}
 }
 
-func (DicePlugin) Init(engine *gonebot.EngineProxy) {
+func (DicePlugin) Init(engine *gonebot.PluginHub) {
 	checkMw := func(ctx *gonebot.Context) bool {
 		params, err := parseText(ctx.Event.ExtractPlainText())
 		if err != nil {

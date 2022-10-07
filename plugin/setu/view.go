@@ -35,7 +35,7 @@ func (SetuPlugin) GetPluginInfo() gonebot.PluginInfo {
 	}
 }
 
-func (SetuPlugin) Init(engine *gonebot.EngineProxy) {
+func (SetuPlugin) Init(engine *gonebot.PluginHub) {
 	// 用户在不同群的数据都应该是共通的
 	keyFunc := func(ctx *gonebot.Context) string {
 		return fmt.Sprintf("%d", ctx.Event.(*gonebot.GroupMessageEvent).UserId)
