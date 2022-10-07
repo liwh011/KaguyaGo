@@ -4,3 +4,6 @@ plugin/init.go
 
 # Private plugins begin with _
 _*/
+
+*.exe
+.vscode
