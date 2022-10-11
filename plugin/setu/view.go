@@ -56,7 +56,8 @@ func (SetuPlugin) Init(engine *gonebot.PluginHub) {
 		Use(freqLimiter.Handle).
 		Use(timesLimiter.Handle).
 		Handle(func(ctx *gonebot.Context) {
-			raw := ctx.GetMap("regex")["matched"].([]string)[1]
+			raw := ctx.GetRegexMatchResult().Get(1)
+			// raw := ctx.GetMap("regex")["matched"].([]string)[1]
 			tags := regexp.MustCompile("[,， ]+").Split(raw, -1)
 			pics, err := FetchOnlinWithTags(tags)
 			if err != nil {
