@@ -37,7 +37,7 @@ func (DicePlugin) Init(engine *gonebot.PluginHub) {
 	}
 
 	engine.
-		NewHandler(gonebot.EventNameGroupMessage).
+		NewHandler(gonebot.EventName_GroupMessage).
 		Use(gonebot.StartsWith(".r")).
 		Use(checkMw).
 		Handle(func(ctx *gonebot.Context) {
