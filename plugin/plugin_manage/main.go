@@ -20,7 +20,12 @@ func init() {
 
 		// 添加一个中间件来检查插件是否被禁用
 		ph.Use(func(ctx *gonebot.Context) bool {
-			if ev, ok := ctx.Event.(*gonebot.GroupMessageEvent); ok {
+			if pluginId == "plugin_manage@liwh011" {
+				return true
+			}
+			if _, ok := ctx.Event.(*gonebot.PrivateMessageEvent); ok {
+				return pm.IsPluginEnabledGlobally(pluginId)
+			} else if ev, ok := ctx.Event.(*gonebot.GroupMessageEvent); ok {
 				enabled, _ := pm.IsPluginEnabled(pluginId, ev.GroupId)
 				return enabled
 			}
@@ -59,39 +64,39 @@ func (set *groupSet) Contains(groupId int64) bool {
 }
 
 type PluginState struct {
-	enabled         bool
-	enableOnDefault bool
-	enabledGroups   groupSet
-	disabledGroups  groupSet
-	visible         bool
+	Enabled         bool
+	EnableOnDefault bool
+	EnabledGroups   groupSet
+	EisabledGroups  groupSet
+	Visible         bool
 }
 
 func newPluginState() *PluginState {
 	return &PluginState{
-		enabled:         true,
-		enableOnDefault: true,
-		enabledGroups:   groupSet{},
-		disabledGroups:  groupSet{},
-		visible:         true,
+		Enabled:         true,
+		EnableOnDefault: true,
+		EnabledGroups:   groupSet{},
+		EisabledGroups:  groupSet{},
+		Visible:         true,
 	}
 }
 
 func (state *PluginState) IsEnabled(groupId int64) bool {
-	if !state.enabled {
+	if !state.Enabled {
 		return false
 	}
 
-	for _, g := range state.disabledGroups {
+	for _, g := range state.EisabledGroups {
 		if g == groupId {
 			return false
 		}
 	}
-	for _, g := range state.enabledGroups {
+	for _, g := range state.EnabledGroups {
 		if g == groupId {
 			return true
 		}
 	}
-	return state.enableOnDefault
+	return state.EnableOnDefault
 }
 
 type PluginManager struct {
@@ -114,7 +119,6 @@ func (pm *PluginManager) Init(hub *gonebot.PluginHub) {
 	if err != nil {
 		logrus.Fatalf("无法创建或获取plugin_manage插件的存储: %v", err)
 	}
-	pm.pluginStates = make(map[string]*PluginState)
 	pm.restoreStates()
 
 	// 群内，管理员可用
@@ -146,6 +150,14 @@ func (pm *PluginManager) Init(hub *gonebot.PluginHub) {
 		})
 }
 
+func (pm *PluginManager) IsPluginEnabledGlobally(pluginId string) bool {
+	state, ok := pm.pluginStates[pluginId]
+	if !ok {
+		return false
+	}
+	return state.Enabled
+}
+
 // 某插件是否在某群启用
 func (pm *PluginManager) IsPluginEnabled(pluginId string, groupId int64) (bool, error) {
 	state, ok := pm.pluginStates[pluginId]
@@ -173,7 +185,7 @@ func (pm *PluginManager) restoreStates() {
 // 分别列出在某群启用和禁用的插件
 func (pm *PluginManager) ListPlugins(groupId int64) (enabled, disabled []string) {
 	for id, state := range pm.pluginStates {
-		if state.visible {
+		if state.Visible {
 			if state.IsEnabled(groupId) {
 				enabled = append(enabled, id)
 			} else {
@@ -211,11 +223,11 @@ func (pm *PluginManager) EnablePlugin(pluginIds []string, groupId int64, enable 
 		}
 
 		if enable {
-			state.enabledGroups.Add(groupId)
-			state.disabledGroups.Remove(groupId)
+			state.EnabledGroups.Add(groupId)
+			state.EisabledGroups.Remove(groupId)
 		} else {
-			state.enabledGroups.Remove(groupId)
-			state.disabledGroups.Add(groupId)
+			state.EnabledGroups.Remove(groupId)
+			state.EisabledGroups.Add(groupId)
 		}
 		cnt++
 	}
