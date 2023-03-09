@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/liwh011/gonebot"
+	"github.com/sirupsen/logrus"
 )
 
 func init() {
@@ -13,7 +14,7 @@ func init() {
 	}
 	gonebot.RegisterPlugin(pm, nil)
 
-	gonebot.EngineHookManager.PluginWillLoad(func(ph *gonebot.PluginHub) {
+	gonebot.GlobalHooks.PluginWillLoad(func(ph *gonebot.PluginHub) {
 		pluginId := ph.GetPluginId()
 		pm.pluginStates[pluginId] = newPluginState()
 
@@ -95,6 +96,7 @@ func (state *PluginState) IsEnabled(groupId int64) bool {
 
 type PluginManager struct {
 	pluginStates map[string]*PluginState
+	storage      gonebot.Storage
 }
 
 func (pm *PluginManager) GetPluginInfo() gonebot.PluginInfo {
@@ -107,8 +109,16 @@ func (pm *PluginManager) GetPluginInfo() gonebot.PluginInfo {
 }
 
 func (pm *PluginManager) Init(hub *gonebot.PluginHub) {
+	var err error
+	pm.storage, err = gonebot.NewStorage("plugin_manage")
+	if err != nil {
+		logrus.Fatalf("无法创建或获取plugin_manage插件的存储: %v", err)
+	}
+	pm.pluginStates = make(map[string]*PluginState)
+	pm.restoreStates()
+
 	// 群内，管理员可用
-	hub.NewHandler(gonebot.EventNameGroupMessage).
+	hub.NewHandler(gonebot.EventName_GroupMessage).
 		Use(gonebot.FromAdminOrHigher()).
 		Use(gonebot.ShellLikeCommand("plugin", groupCommands{}, gonebot.ParseFailedAction_AutoReply)).
 		Handle(func(ctx *gonebot.Context) {
@@ -122,7 +132,7 @@ func (pm *PluginManager) Init(hub *gonebot.PluginHub) {
 		})
 
 	// 私聊，仅超管可用
-	hub.NewHandler(gonebot.EventNamePrivateMessage).
+	hub.NewHandler(gonebot.EventName_PrivateMessage).
 		Use(gonebot.FromSuperuser()).
 		Use(gonebot.ShellLikeCommand("plugin", privateCommands{}, gonebot.ParseFailedAction_AutoReply)).
 		Handle(func(ctx *gonebot.Context) {
@@ -143,6 +153,21 @@ func (pm *PluginManager) IsPluginEnabled(pluginId string, groupId int64) (bool, 
 		return false, fmt.Errorf("插件%s不存在", pluginId)
 	}
 	return state.IsEnabled(groupId), nil
+}
+
+func (pm *PluginManager) storeStates() {
+	err := pm.storage.Set("plugin_states", "plugin_states", pm.pluginStates)
+	if err != nil {
+		logrus.Warnf("无法保存插件状态，重启进程将导致未保存状态丢失: %v", err)
+	}
+}
+
+func (pm *PluginManager) restoreStates() {
+	err := pm.storage.Get("plugin_states", "plugin_states", &pm.pluginStates)
+	// 如果存储中没有数据，就使用默认值
+	if err != nil {
+		pm.storage.Set("plugin_states", "plugin_states", pm.pluginStates)
+	}
 }
 
 // 分别列出在某群启用和禁用的插件
@@ -194,6 +219,7 @@ func (pm *PluginManager) EnablePlugin(pluginIds []string, groupId int64, enable 
 		}
 		cnt++
 	}
+	pm.storeStates()
 
 	if len(invalidPluginIds) > 0 {
 		err = fmt.Errorf("没有找到以下插件ID：%s", strings.Join(invalidPluginIds, ", "))
