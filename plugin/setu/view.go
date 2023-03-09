@@ -51,7 +51,7 @@ func (SetuPlugin) Init(engine *gonebot.PluginHub) {
 		ctx.Replyf("您今天已经冲过%d次了，请%s后再来！", timesLimiter.Times, timesLimiter.GetResetTime().Format("02日15:04"))
 	})
 
-	engine.NewHandler(gonebot.EventNameGroupMessage).
+	engine.NewHandler(gonebot.EventName_GroupMessage).
 		Use(gonebot.Regex(*regexp.MustCompile("^来点(.*?)的[涩瑟色]图"))).
 		Use(freqLimiter.Handle).
 		Use(timesLimiter.Handle).
@@ -72,7 +72,7 @@ func (SetuPlugin) Init(engine *gonebot.PluginHub) {
 			sendPic(ctx, pics)
 		})
 
-	engine.NewHandler(gonebot.EventNameGroupMessage).
+	engine.NewHandler(gonebot.EventName_GroupMessage).
 		Use(gonebot.Regex(*regexp.MustCompile("^不够[涩瑟色]|[涩瑟色]图|来一?[点份张].*[涩瑟色]|再来[点份张]|看过了|铜$"))).
 		Use(timesLimiter.Handle).
 		Use(freqLimiter.Handle).
