@@ -16,16 +16,17 @@ func init() {
 
 	gonebot.GlobalHooks.PluginWillLoad(func(ph *gonebot.PluginHub) {
 		pluginId := ph.GetPluginId()
+		if pluginId == "plugin_manage@liwh011" {
+			return
+		}
 		pm.pluginStates[pluginId] = newPluginState()
 
 		// 添加一个中间件来检查插件是否被禁用
 		ph.Use(func(ctx *gonebot.Context) bool {
-			if pluginId == "plugin_manage@liwh011" {
-				return true
+			if !pm.IsPluginEnabledGlobally(pluginId) {
+				return false
 			}
-			if _, ok := ctx.Event.(*gonebot.PrivateMessageEvent); ok {
-				return pm.IsPluginEnabledGlobally(pluginId)
-			} else if ev, ok := ctx.Event.(*gonebot.GroupMessageEvent); ok {
+			if ev, ok := ctx.Event.(*gonebot.GroupMessageEvent); ok {
 				enabled, _ := pm.IsPluginEnabled(pluginId, ev.GroupId)
 				return enabled
 			}
