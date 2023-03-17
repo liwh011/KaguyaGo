@@ -10,16 +10,22 @@ import (
 
 func init() {
 	pm := &PluginManager{
-		pluginStates: make(map[string]*PluginState),
+		pluginStates:    make(map[string]*PluginState),
+		pluginInstances: make(map[string]gonebot.Plugin),
 	}
 	gonebot.RegisterPlugin(pm, nil)
 
 	gonebot.GlobalHooks.PluginWillLoad(func(ph *gonebot.PluginHub) {
-		pluginId := ph.GetPluginId()
-		if pluginId == "plugin_manage@liwh011" {
-			return
+		pluginInstance := ph.GetPluginInstance()
+		if pluginInstance, ok := pluginInstance.(Managable); ok {
+			if !pluginInstance.Managable() {
+				return
+			}
 		}
+
+		pluginId := ph.GetPluginId()
 		pm.pluginStates[pluginId] = newPluginState()
+		pm.pluginInstances[pluginId] = pluginInstance
 
 		// 添加一个中间件来检查插件是否被禁用
 		ph.Use(func(ctx *gonebot.Context) bool {
@@ -101,8 +107,9 @@ func (state *PluginState) IsEnabled(groupId int64) bool {
 }
 
 type PluginManager struct {
-	pluginStates map[string]*PluginState
-	storage      gonebot.Storage
+	pluginStates    map[string]*PluginState
+	pluginInstances map[string]gonebot.Plugin
+	storage         gonebot.Storage
 }
 
 func (pm *PluginManager) GetPluginInfo() gonebot.PluginInfo {
@@ -151,6 +158,10 @@ func (pm *PluginManager) Init(hub *gonebot.PluginHub) {
 		})
 }
 
+func (pm *PluginManager) Managable() bool {
+	return false
+}
+
 func (pm *PluginManager) IsPluginEnabledGlobally(pluginId string) bool {
 	state, ok := pm.pluginStates[pluginId]
 	if !ok {
@@ -185,9 +196,9 @@ func (pm *PluginManager) restoreStates() {
 
 // 分别列出在某群启用和禁用的插件
 func (pm *PluginManager) ListPlugins(groupId int64) (enabled, disabled []string) {
-	for id, state := range pm.pluginStates {
-		if state.Visible {
-			if state.IsEnabled(groupId) {
+	for id, instance := range pm.pluginInstances {
+		if instance, ok := instance.(VisibilityCustomed); !ok || instance.Visible() {
+			if en, err := pm.IsPluginEnabled(id, groupId); en && err == nil {
 				enabled = append(enabled, id)
 			} else {
 				disabled = append(disabled, id)
