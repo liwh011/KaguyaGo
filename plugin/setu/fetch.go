@@ -23,7 +23,7 @@ const apiUrl = "https://api.lolicon.app/setu/v2"
 // 使用Tag来获取图片
 func FetchOnlinWithTags(tags []string) ([]Pic, error) {
 	data := map[string]interface{}{
-		"tags": tags,
+		"tag": tags,
 	}
 	dataJson, _ := json.Marshal(data)
 	reqBody := bytes.NewReader(dataJson)

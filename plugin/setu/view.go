@@ -8,6 +8,7 @@ import (
 
 	"github.com/liwh011/gonebot"
 	gbmw "github.com/liwh011/gonebot/middlewares"
+	"github.com/sirupsen/logrus"
 )
 
 var config = struct {
@@ -58,7 +59,8 @@ func (SetuPlugin) Init(engine *gonebot.PluginHub) {
 		Handle(func(ctx *gonebot.Context) {
 			raw := ctx.GetRegexMatchResult().Get(1)
 			// raw := ctx.GetMap("regex")["matched"].([]string)[1]
-			tags := regexp.MustCompile("[,， ]+").Split(raw, -1)
+			tags := regexp.MustCompile("[,， 、和]+").Split(raw, -1)
+			logrus.Debugf("正在使用%v搜索涩图", tags)
 			pics, err := FetchOnlinWithTags(tags)
 			if err != nil {
 				ctx.Replyf("获取图片错误: %s", err)
@@ -94,17 +96,19 @@ func (SetuPlugin) Init(engine *gonebot.PluginHub) {
 func sendPic(ctx *gonebot.Context, pics []Pic) {
 	pic := pics[rand.Intn(len(pics))]
 	msg, _ := gonebot.MsgPrintf(
-		"{}\n标题: %s\nPID: %d\n作者: %s\n",
+		"{}\n标题: %s\nPID: %d\n作者: %s\nTag: %v\n",
 		gonebot.MsgFactory.Image(pic.Urls.Original, nil),
 		pic.Title,
 		pic.Pid,
 		pic.Author,
+		pic.Tags,
 	)
 
 	gid := ctx.Event.(*gonebot.GroupMessageEvent).GroupId
 	msgId, err := ctx.Bot.SendGroupMsg(gid, msg, false)
 	if err != nil {
 		ctx.Replyf("图片发不出去了...%s", err)
+		return
 	}
 	// 发送成功后过一会撤回
 	if msgId != 0 {
