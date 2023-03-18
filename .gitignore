@@ -7,3 +7,7 @@ _*/
 
 *.exe
 .vscode
+
+*.db
+*.exe
+bot
