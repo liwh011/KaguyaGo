@@ -53,7 +53,7 @@ func (SetuPlugin) Init(engine *gonebot.PluginHub) {
 	})
 
 	engine.NewHandler(gonebot.EventName_GroupMessage).
-		Use(gonebot.Regex(*regexp.MustCompile("^来点(.*?)的[涩瑟色]图"))).
+		Use(gonebot.Regex(*regexp.MustCompile("^来(?:点|一张|张|份)(.*?)的?[涩瑟色]图"))).
 		Use(freqLimiter.Handle).
 		Use(timesLimiter.Handle).
 		Handle(func(ctx *gonebot.Context) {
@@ -95,17 +95,9 @@ func (SetuPlugin) Init(engine *gonebot.PluginHub) {
 
 func sendPic(ctx *gonebot.Context, pics []Pic) {
 	pic := pics[rand.Intn(len(pics))]
-	msg, _ := gonebot.MsgPrintf(
-		"{}\n标题: %s\nPID: %d\n作者: %s\nTag: %v\n",
-		gonebot.MsgFactory.Image(pic.Urls.Original, nil),
-		pic.Title,
-		pic.Pid,
-		pic.Author,
-		pic.Tags,
-	)
-
+	picMsg := gonebot.Message{gonebot.MsgFactory.Image(pic.Urls.Original, nil)}
 	gid := ctx.Event.(*gonebot.GroupMessageEvent).GroupId
-	msgId, err := ctx.Bot.SendGroupMsg(gid, msg, false)
+	msgId, err := ctx.Bot.SendGroupMsg(gid, picMsg, false)
 	if err != nil {
 		ctx.Replyf("图片发不出去了...%s", err)
 		return
@@ -117,4 +109,13 @@ func sendPic(ctx *gonebot.Context, pics []Pic) {
 			ctx.Bot.DeleteMsg(msgId)
 		}()
 	}
+
+	msg, _ := gonebot.MsgPrintf(
+		"标题: %s\nPID: %d\n作者: %s\nTag: %v\n",
+		pic.Title,
+		pic.Pid,
+		pic.Author,
+		pic.Tags,
+	)
+	ctx.Bot.SendGroupMsg(gid, msg, false)
 }
