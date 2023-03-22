@@ -127,8 +127,7 @@ func (plugin *ChatgptPlugin) Init(engine *gonebot.PluginHub) {
 		Handle(func(ctx *gonebot.Context) {
 			parseResult := ctx.GetShellLikeCommandResult()
 			if !parseResult.HasSubcommand() {
-				msg := parseResult.FormatErrorAndHelp(fmt.Errorf("未指定子命令"))
-				ctx.Reply(msg)
+				ctx.Reply("请使用“cgpt help 用自然语言描述你的问题”，来获得使用帮助")
 				return
 			}
 			parseResult.GetSubcommand().(Command).Run(ctx, plugin)
@@ -197,7 +196,7 @@ func (plugin *ChatgptPlugin) Init(engine *gonebot.PluginHub) {
 				replyMsg := gonebot.Message{}
 				splitByAt := strings.Split(reply, "@")
 				replyMsg.AppendText(splitByAt[0])
-				regexp := regexp.MustCompile(`([0-9]+) (.*)`)
+				regexp := regexp.MustCompile(`([0-9]+) ?(.*)`)
 				if len(splitByAt) > 1 {
 					for _, s := range splitByAt[1:] {
 						matches := regexp.FindStringSubmatch(s)
