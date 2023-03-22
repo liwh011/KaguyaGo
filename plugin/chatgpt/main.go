@@ -68,7 +68,7 @@ var usage string = `
 2. 新建会话，使用新的催眠
 使用命令："cgpt session new [-n <会话名称>] [prompt]"
 作用：在当前群聊中新建一个会话，并启用一个新的催眠。
-可选参数："prompt" 要使用的催眠咒语，省略则使用默认咒语(猫娘)；"-n" 新会话的名称，省略则使用默认名称
+可选参数："prompt" 要使用的催眠咒语，用于改变GPT的语言输出风格，省略则使用默认咒语(猫娘)；"-n" 新会话的名称，省略则使用默认名称
 
 3. 清空当前会话，但保留催眠咒语
 使用命令："cgpt session reset"
@@ -127,7 +127,8 @@ func (plugin *ChatgptPlugin) Init(engine *gonebot.PluginHub) {
 		Handle(func(ctx *gonebot.Context) {
 			parseResult := ctx.GetShellLikeCommandResult()
 			if !parseResult.HasSubcommand() {
-				ctx.Reply("请使用“cgpt help 用自然语言描述你的问题”，来获得使用帮助")
+				ctx.Reply(usage)
+				ctx.Reply("请使用“cgpt help 用自然语言描述你的问题”，来获得更详细的使用帮助，例如：如何创建一个新会话？")
 				return
 			}
 			parseResult.GetSubcommand().(Command).Run(ctx, plugin)
