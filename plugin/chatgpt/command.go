@@ -46,7 +46,7 @@ func (cmd *groupSessionListCmd) Run(ctx *gonebot.Context, plugin *ChatgptPlugin)
 		sessionDescs := lo.Map(groupSessions, func(session *session, _ int) string {
 			return session.GetBrief()
 		})
-		ctx.Replyf("当前群共有%d个会话，第%d/%d页为：\n%s", len(groupSessions), page, pageCount, strings.Join(sessionDescs, "\n\n"))
+		ctx.Replyf("第%d/%d页为：\n%s", len(groupSessions), page, pageCount, strings.Join(sessionDescs, "\n\n"))
 	} else {
 		session := plugin.sessionManager.GetGroupSessionByIdOrName(groupId, cmd.SessionId)
 		if session == nil {
@@ -93,7 +93,11 @@ type groupSessionSwitchCmd struct {
 
 func (cmd *groupSessionSwitchCmd) Run(ctx *gonebot.Context, plugin *ChatgptPlugin) {
 	groupId := ctx.Event.(*gonebot.GroupMessageEvent).GroupId
-	plugin.sessionManager.SwitchGroupSessionByIdOrName(groupId, cmd.SessionId)
+	err := plugin.sessionManager.SwitchGroupSessionByIdOrName(groupId, cmd.SessionId)
+	if err != nil {
+		ctx.Reply(err.Error())
+		return
+	}
 	ctx.Replyf("已切换会话到%s", cmd.SessionId)
 }
 

@@ -1,6 +1,7 @@
 package chatgpt
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"strings"
@@ -147,11 +148,14 @@ func (sm *sessionManager) ListGroupHistorySessionsByPage(groupId int64, page int
 	return sessions[start:end], page, pageCount
 }
 
-func (sm *sessionManager) SwitchGroupSessionByIdOrName(groupId int64, sessionNameOrId string) {
+func (sm *sessionManager) SwitchGroupSessionByIdOrName(groupId int64, sessionNameOrId string) error {
 	session := sm.GetGroupSessionByIdOrName(groupId, sessionNameOrId)
 	if session != nil {
 		sm.GroupSessions[groupId] = session.SessionId
+	} else {
+		return errors.New("会话不存在")
 	}
+	return nil
 }
 
 func (sm *sessionManager) SetSessionName(sessionId string, name string) {
